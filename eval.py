@@ -7,18 +7,18 @@ from langsmith.evaluation import LangChainStringEvaluator
 from langsmith.schemas import Run, Example
 from langsmith import evaluate
 
-# Load environment variables
+
 load_dotenv()
 LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# Initialize LangSmith client
+
 client = Client()
 
-# Initialize Gemini model using LangChain integration
+
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
 
-# Prompt template for evaluation
+
 template = """You are an expert professor specialized in grading students' answers to questions.
 You are grading the following question:
 {query}
@@ -32,30 +32,28 @@ Grade:
 
 prompt = PromptTemplate(input_variables=["query", "answer", "result"], template=template)
 
-# QA evaluator using Gemini
+
 qa_evaluator = LangChainStringEvaluator("qa", config={"llm": llm, "prompt": prompt})
 
-# Custom evaluation metric (length check)
 def evaluate_length(run: Run, example: Example) -> dict:
     prediction = run.outputs.get("output") or ""
     required = example.outputs.get("answer") or ""
     score = int(len(prediction) < 2 * len(required))
     return {"key": "length", "score": score}
 
-# Function to call Gemini directly for answers
 def my_app(question):
     result = llm.invoke(question)
     return result.content
 
-# Wrapper for LangSmith
+
 def langsmith_app(inputs):
     output = my_app(inputs["question"])
     return {"output": output}
 
-# Run evaluation experiment
 experiment = evaluate(
     langsmith_app,
     data="test_data",
     evaluators=[evaluate_length, qa_evaluator],
     experiment_prefix="google-gemini"
 )
+
